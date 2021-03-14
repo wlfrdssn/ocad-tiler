@@ -1,13 +1,15 @@
 const { ocadToSvg, ocadToGeoJson } = require('ocad2geojson')
 const Flatbush = require('flatbush')
-const DOMImplementation = global.DOMImplementation
-  ? global.DOMImplementation
-  : new (require('xmldom').DOMImplementation)()
 
 const hundredsMmToMeter = 1 / (100 * 1000)
 
 module.exports = class OcadTiler {
-  constructor(ocadFile) {
+  constructor(ocadFile, options) {
+    this.options = {
+      DOMImplementation:
+        typeof window !== 'undefined' ? window.DOMImplementation : null,
+      ...options,
+    }
     this.ocadFile = ocadFile
     this.index = new Flatbush(this.ocadFile.objects.length)
 
@@ -56,6 +58,7 @@ module.exports = class OcadTiler {
   }
 
   renderSvg(extent, resolution, options = {}) {
+    const DOMImplementation = this.options.DOMImplementation
     const document = DOMImplementation.createDocument(null, 'xml', null)
     const svg = ocadToSvg(this.ocadFile, {
       objects: this.getObjects(extent, (options.buffer || 256) * resolution),
