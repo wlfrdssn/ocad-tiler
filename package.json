@@ -19,8 +19,8 @@
   "author": "Per Liedman <per@liedman.net>",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "ocad2geojson": "^1.9.3",
-    "flatbush": "^3.3.0"
+    "flatbush": "^3.3.0",
+    "ocad2geojson": "^2.1.2"
   },
   "devDependencies": {
     "eslint": "^7.11.0",
