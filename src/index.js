@@ -1,15 +1,14 @@
-const { ocadToSvg, ocadToGeoJson } = require('ocad2geojson')
+const { ocadToSvg } = require('ocad2geojson/src/ocad-to-svg')
 const Flatbush = require('flatbush')
-
+const defaultDOMImplementation = getGlobal().DOMImplementation
 const hundredsMmToMeter = 1 / (100 * 1000)
 
 module.exports = class OcadTiler {
   constructor(ocadFile, options) {
     this.options = {
-      DOMImplementation:
-        typeof window !== 'undefined' ? window.DOMImplementation : null,
       ...options,
     }
+
     this.ocadFile = ocadFile
     this.index = new Flatbush(this.ocadFile.objects.length)
 
@@ -42,23 +41,19 @@ module.exports = class OcadTiler {
 
     this.index.finish()
     const crs = ocadFile.getCrs()
-    this.bounds = [
-      bounds[0] * hundredsMmToMeter * crs.scale + crs.easting,
-      bounds[1] * hundredsMmToMeter * crs.scale + crs.northing,
-      bounds[2] * hundredsMmToMeter * crs.scale + crs.easting,
-      bounds[3] * hundredsMmToMeter * crs.scale + crs.northing,
-    ]
-  }
-
-  renderGeoJson(extent, options) {
-    return ocadToGeoJson(this.ocadFile, {
-      objects: this.getObjects(extent),
-      ...options,
-    })
+    this.bounds = mapExtentToProjected(bounds, crs)
   }
 
   renderSvg(extent, resolution, options = {}) {
-    const DOMImplementation = this.options.DOMImplementation
+    const DOMImplementation =
+      options.DOMImplementation || defaultDOMImplementation
+
+    if (!DOMImplementation) {
+      throw new Error(
+        'Your environment does not have a default DOMImplementation and no implementation was passed as options.'
+      )
+    }
+
     const document = DOMImplementation.createDocument(null, 'xml', null)
     const svg = ocadToSvg(this.ocadFile, {
       objects: this.getObjects(extent, (options.buffer || 256) * resolution),
@@ -67,15 +62,13 @@ module.exports = class OcadTiler {
 
     const mapGroup = svg.getElementsByTagName('g')[0]
     const crs = this.ocadFile.getCrs()
-    extent = [
-      (extent[0] - crs.easting) / crs.scale / hundredsMmToMeter,
-      (extent[1] - crs.northing) / crs.scale / hundredsMmToMeter,
-      (extent[2] - crs.easting) / crs.scale / hundredsMmToMeter,
-      (extent[3] - crs.northing) / crs.scale / hundredsMmToMeter,
-    ]
+    extent = projectedExtentToMapCoords(extent, crs)
+    const rotation = options.applyGrivation
+      ? `rotate(${(crs.grivation / Math.PI) * 180})`
+      : ''
     const transform = `scale(${
       (hundredsMmToMeter * crs.scale) / resolution
-    }) translate(${-extent[0]}, ${extent[3]})`
+    }) translate(${-extent[0]}, ${extent[3]}) ${rotation}`
     mapGroup.setAttributeNS(
       'http://www.w3.org/2000/svg',
       'transform',
@@ -97,12 +90,8 @@ module.exports = class OcadTiler {
 
   getObjects(extent, buffer) {
     const crs = this.ocadFile.getCrs()
-    extent = [
-      (extent[0] - crs.easting) / crs.scale / hundredsMmToMeter - buffer,
-      (extent[1] - crs.northing) / crs.scale / hundredsMmToMeter - buffer,
-      (extent[2] - crs.easting) / crs.scale / hundredsMmToMeter + buffer,
-      (extent[3] - crs.northing) / crs.scale / hundredsMmToMeter + buffer,
-    ]
+    extent = projectedExtentToMapCoords(extent, crs)
+    extent = enlargeExtent(extent, buffer)
     return this.index
       .search(extent[0], extent[1], extent[2], extent[3])
       .map(i => this.ocadFile.objects[i])
@@ -136,4 +125,59 @@ function roundDown(x, div) {
 
 function roundUp(x, div) {
   return Math.ceil(x / div)
+}
+
+function projectedExtentToMapCoords(extent, crs) {
+  return transformExtent(extent, c => crs.toMapCoord(c))
+}
+
+function mapExtentToProjected(extent, crs) {
+  return transformExtent(extent, c => crs.toProjectedCoord(c))
+}
+
+function transformExtent(extent, transform) {
+  const corners = [
+    [extent[0], extent[1]],
+    [extent[2], extent[1]],
+    [extent[2], extent[3]],
+    [extent[0], extent[3]],
+  ]
+  const transformed = corners.map(transform)
+  return [
+    Math.min.apply(
+      Math,
+      transformed.map(c => c[0])
+    ),
+    Math.min.apply(
+      Math,
+      transformed.map(c => c[1])
+    ),
+    Math.max.apply(
+      Math,
+      transformed.map(c => c[0])
+    ),
+    Math.max.apply(
+      Math,
+      transformed.map(c => c[1])
+    ),
+  ]
+}
+
+function enlargeExtent(extent, buffer) {
+  return [
+    extent[0] - buffer,
+    extent[1] - buffer,
+    extent[2] + buffer,
+    extent[3] + buffer,
+  ]
+}
+
+function getGlobal() {
+  if (typeof global !== 'undefined') {
+    return global
+  } else if (typeof window !== 'undefined') {
+    return window
+  } else {
+    return {}
+  }
 }
