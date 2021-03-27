@@ -8,7 +8,7 @@ module.exports = {
   parserOptions: {
     ecmaFeatures: {},
     ecmaVersion: 2018,
-    sourceType: 'script',
+    sourceType: 'module',
   },
   plugins: [],
   rules: {},

@@ -1,9 +1,10 @@
-const { ocadToSvg } = require('ocad2geojson/src/ocad-to-svg')
-const Flatbush = require('flatbush')
+import { ocadToSvg } from 'ocad2geojson/src/ocad-to-svg'
+import Flatbush from 'flatbush'
+
 const defaultDOMImplementation = getGlobal().DOMImplementation
 const hundredsMmToMeter = 1 / (100 * 1000)
 
-module.exports = class OcadTiler {
+export default class OcadTiler {
   constructor(ocadFile, options) {
     this.options = {
       ...options,
