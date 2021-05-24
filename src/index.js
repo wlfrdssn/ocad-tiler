@@ -1,7 +1,7 @@
 import { ocadToSvg } from 'ocad2geojson/src/ocad-to-svg'
 import Flatbush from 'flatbush'
 
-const defaultDOMImplementation = getGlobal().DOMImplementation
+const defaultDOMImplementation = getDefaultDOMImplementation()
 const hundredsMmToMeter = 1 / (100 * 1000)
 
 export default class OcadTiler {
@@ -171,6 +171,12 @@ function enlargeExtent(extent, buffer) {
     extent[2] + buffer,
     extent[3] + buffer,
   ]
+}
+
+function getDefaultDOMImplementation() {
+  const global = getGlobal()
+  const document = global.document
+  return document && document.implementation
 }
 
 function getGlobal() {
