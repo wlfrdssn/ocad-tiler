@@ -70,11 +70,7 @@ export default class OcadTiler {
     const transform = `scale(${
       (hundredsMmToMeter * crs.scale) / resolution
     }) translate(${-extent[0]}, ${extent[3]}) ${rotation}`
-    mapGroup.setAttributeNS(
-      'http://www.w3.org/2000/svg',
-      'transform',
-      transform
-    )
+    mapGroup.setAttributeNS('', 'transform', transform)
     if (options.fill) {
       const rect = document.createElement('rect')
       rect.setAttributeNS(
