@@ -1,6 +1,6 @@
 {
   "name": "ocad-tiler",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Tile helper library for OCAD files",
   "main": "ocad-tiler.js",
   "module": "src/index.js",
