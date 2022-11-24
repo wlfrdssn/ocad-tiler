@@ -22,7 +22,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "flatbush": "^3.3.0",
-    "ocad2geojson": "^2.1.8"
+    "ocad2geojson": "^2.1.12"
   },
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
