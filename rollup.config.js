@@ -6,11 +6,13 @@ const output = (file, plugins) => ({
   input: 'src/index.js',
   output: {
     name: 'OcadTiler',
-    format: 'umd',
+    format: 'cjs',
     indent: false,
     file,
+    exports: 'default',
   },
   plugins,
+  external: ['ocad2geojson/src/ocad-to-svg', 'flatbush'],
 })
 
 export default [output('ocad-tiler.js', [commonjs(), resolve()])]
